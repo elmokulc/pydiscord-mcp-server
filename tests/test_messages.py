@@ -27,7 +27,7 @@ def test_message_serialization():
     assert result["id"] == "1234567890123456789"
     assert result["author"]["id"] == "900"
     assert result["created_at"].endswith("Z")
-    assert result["content"] == "Bonjour @everyone"
+    assert result["content"] == "Hello @everyone"
     assert result["attachments"][0]["id"] == "501"
     assert result["reference"]["message_id"] == "299"
     assert result["url"].endswith("1234567890123456789")

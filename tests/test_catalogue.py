@@ -35,8 +35,8 @@ CASES = {
     "search_members": {"query": "ali"},
     "create_poll": {
         "channel_id": "200",
-        "question": "On déploie ?",
-        "answers": [{"text": "Oui", "emoji": "👍"}, {"text": "Non"}],
+        "question": "Shall we deploy?",
+        "answers": [{"text": "Yes", "emoji": "👍"}, {"text": "No"}],
     },
     "get_poll": {"channel_id": "200", "message_id": "310"},
     "end_poll": {"channel_id": "200", "message_id": "310"},

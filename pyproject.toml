@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "pydiscord-mcp-server"
 version = "0.2.0"
-description = "Serveur MCP persistant pour un bot Discord"
+description = "Persistent MCP server for a Discord bot"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [

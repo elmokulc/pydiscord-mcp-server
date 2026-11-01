@@ -79,7 +79,7 @@ def make_message(ident=300, channel=None, author_id=900):
     )
     message.created_at = datetime(2026, 10, 1, tzinfo=UTC)
     message.edited_at = None
-    message.content = "Bonjour @everyone"
+    message.content = "Hello @everyone"
     message.attachments = []
     message.embeds = []
     message.stickers = []

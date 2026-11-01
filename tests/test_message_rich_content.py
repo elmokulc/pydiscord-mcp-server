@@ -35,8 +35,8 @@ def rich_message(scene):
             "embeds": [
                 {
                     "type": "rich",
-                    "title": "Roster de guilde",
-                    "description": "Équipe du raid\n" + "x" * 4000,
+                    "title": "Guild roster",
+                    "description": "Raid team at the café\n" + "x" * 4000,
                     "url": "https://raid-helper.dev/event/123",
                     "color": 0x123456,
                     "timestamp": "2026-10-17T07:59:24Z",
@@ -47,12 +47,12 @@ def rich_message(scene):
                         "proxy_icon_url": "https://proxy.example.com/author.png",
                     },
                     "footer": {
-                        "text": "Inscrivez-vous ici",
+                        "text": "Sign up here",
                         "icon_url": "https://example.com/footer.png",
                     },
                     "fields": [
                         {"name": "Tanks", "value": "Alice\nBob", "inline": True},
-                        {"name": "Soigneurs", "value": "y" * 1024},
+                        {"name": "Healers", "value": "y" * 1024},
                     ],
                     "image": {
                         "url": "https://example.com/roster.png",
@@ -74,7 +74,7 @@ def rich_message(scene):
                     "type": 17,
                     "id": 1,
                     "components": [
-                        {"type": 10, "id": 2, "content": "Choisir un rôle"},
+                        {"type": 10, "id": 2, "content": "Choose a role"},
                         {
                             "type": 1,
                             "id": 3,
@@ -83,7 +83,7 @@ def rich_message(scene):
                                     "type": 2,
                                     "id": 4,
                                     "style": 5,
-                                    "label": "S'inscrire",
+                                    "label": "Sign up",
                                     "url": "https://raid-helper.dev/event/123",
                                 }
                             ],
@@ -114,16 +114,16 @@ def test_native_bot_message_preserves_all_rich_content(rich_message):
     assert result["author"]["name"] == "Raid-Helper"
     assert len(result["embeds"]) == 2
     embed = result["embeds"][0]
-    assert embed["title"] == "Roster de guilde"
-    assert embed["description"] == "Équipe du raid\n" + "x" * 4000
+    assert embed["title"] == "Guild roster"
+    assert embed["description"] == "Raid team at the café\n" + "x" * 4000
     assert embed["url"] == "https://raid-helper.dev/event/123"
     assert embed["color"] == 0x123456
     assert embed["timestamp"] == "2026-10-17T07:59:24Z"
     assert embed["author"]["proxy_icon_url"] == "https://proxy.example.com/author.png"
-    assert embed["footer"]["text"] == "Inscrivez-vous ici"
+    assert embed["footer"]["text"] == "Sign up here"
     assert embed["fields"] == [
         {"name": "Tanks", "value": "Alice\nBob", "inline": True},
-        {"name": "Soigneurs", "value": "y" * 1024, "inline": False},
+        {"name": "Healers", "value": "y" * 1024, "inline": False},
     ]
     assert embed["image"]["width"] == 800
     assert embed["image"]["proxy_url"] == "https://proxy.example.com/roster.png"
@@ -140,7 +140,7 @@ def test_native_bot_message_preserves_all_rich_content(rich_message):
     ]
     children = result["components"][0]["components"]
     assert result["components"][0]["type"] == 17
-    assert children[0]["content"] == "Choisir un rôle"
+    assert children[0]["content"] == "Choose a role"
     assert children[1]["components"][0]["url"] == "https://raid-helper.dev/event/123"
     assert children[2]["components"][0]["options"][0]["value"] == "tank"
     assert result["type"] == "default" and result["pinned"] is True
@@ -149,7 +149,7 @@ def test_native_bot_message_preserves_all_rich_content(rich_message):
 
 def test_plain_message_has_empty_rich_content():
     result = message_info(make_message())
-    assert result.content == "Bonjour @everyone"
+    assert result.content == "Hello @everyone"
     assert result.embeds == result.stickers == result.components == []
     assert result.mentions == result.role_mentions == result.channel_mentions == []
     assert result.type == "default" and not result.pinned
@@ -182,7 +182,7 @@ def test_resolved_reply_preserves_embeds_without_recursing(rich_message):
         message_id=reply.id, channel_id=200, guild_id=100, resolved=reply
     )
     result = message_info(reply)
-    assert result.reply_to.embeds[0].title == "Roster de guilde"
+    assert result.reply_to.embeds[0].title == "Guild roster"
     assert result.reply_to.reply_to is None
 
 
@@ -205,5 +205,5 @@ async def test_rich_content_survives_mcp_output_schema(scene, rich_message, tool
     if tool != "get_message":
         data = data["items"][0]
     assert data["content"] == ""
-    assert data["embeds"][0]["title"] == "Roster de guilde"
-    assert data["components"][0]["components"][0]["content"] == "Choisir un rôle"
+    assert data["embeds"][0]["title"] == "Guild roster"
+    assert data["components"][0]["components"][0]["content"] == "Choose a role"

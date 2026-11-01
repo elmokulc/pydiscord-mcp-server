@@ -73,14 +73,14 @@ def build_scene(access):
     )
 
     poll = MagicMock(spec=discord.Poll)
-    poll.question = "On déploie ?"
+    poll.question = "Shall we deploy?"
     poll.multiple = False
     poll.expires_at = datetime.now(UTC) + timedelta(hours=24)
     poll.total_votes = 2
     poll.is_finalized.return_value = False
     answer = MagicMock(spec=discord.PollAnswer)
     answer.id = 1
-    answer.text = "Oui"
+    answer.text = "Yes"
     answer.emoji = None
     answer.vote_count = 2
     answer.voters.side_effect = lambda **kwargs: async_items([member])

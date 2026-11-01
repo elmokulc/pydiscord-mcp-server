@@ -1,24 +1,24 @@
-# Ajouter un outil MCP
+# Adding an MCP tool
 
-Le parcours normal est : fonction métier → fonction MCP typée → enregistrement
-explicite → test et documentation. Pas d’import automatique, de scan de fichiers
-ou de nouveau client Discord. Ce tutoriel suit **`get_channel_info`**, déjà livré et
-testé, pour consulter un salon ou un fil archivé accessible par ID.
+The usual workflow is: service function → typed MCP wrapper → explicit
+registration → tests and documentation. No automatic imports, file scanning, or
+new Discord client are needed. This guide follows **`get_channel_info`**, an
+existing, tested tool that reads an accessible channel or archived thread by ID.
 
-## 1. Choisir le domaine et le modèle
+## 1. Choose the domain and model
 
-Placer la logique dans `src/pydiscord_mcp_server/services/channels.py`, le contrat
-dans `models/` et l’exposition MCP dans `tools/channels.py`. Pour un domaine nouveau,
-créer deux modules correspondants dans `services/` et `tools/`.
+Put business logic in `src/pydiscord_mcp_server/services/channels.py`, contracts in
+`models/`, and the MCP wrapper in `tools/channels.py`. For a new domain, create
+matching modules in `services/` and `tools/`.
 
-`ChannelInfo`, dans `models/__init__.py`, est un modèle Pydantic contenant les IDs
-en chaînes, `guild_id`, `name`, `type`, `parent_id`, `topic`, `url` et les métadonnées
-d’un fil. Réutiliser les contrats existants au lieu de renvoyer un texte mis en forme.
-Les dates utilisent `datetime` et sont sérialisées en ISO 8601 par le SDK.
+`ChannelInfo`, in `models/__init__.py`, is a Pydantic model containing string IDs,
+`guild_id`, `name`, `type`, `parent_id`, `topic`, `url`, and thread metadata. Reuse
+existing contracts instead of returning formatted text. Dates use `datetime` and
+are serialized as ISO 8601 by the SDK.
 
-## 2. Accéder au client partagé et à discord.py
+## 2. Access the shared client and discord.py
 
-La fonction métier réelle est :
+The existing service function is:
 
 ```python
 from ..models import ChannelInfo
@@ -30,36 +30,34 @@ async def get_channel_info(access: DiscordAccess, channel_id: str) -> ChannelInf
     return channel_info(await access.channel(channel_id))
 ```
 
-`access` est créé une seule fois par `create_application`. Il donne accès au
-runtime, aux paramètres et au client `access.client`. Son helper `channel` suit
-ce chemin :
+`access` is created once by `create_application`. It provides the runtime,
+settings, and `access.client`. Its `channel` helper follows this lookup path:
 
 ```python
 ident = int(channel_id)
 channel = access.client.get_channel(ident) or await access.client.fetch_channel(ident)
 ```
 
-`get_channel` consulte le cache ; `fetch_channel` est la coroutine REST officielle
-discord.py. Le helper vérifie ensuite le type de salon et son serveur avec
-`access.check_guild(channel.guild.id)`. Il refuse les DM et les serveurs hors liste.
-Cela permet notamment d’obtenir directement un fil archivé absent du cache, sans
-avoir appelé `list_threads` auparavant.
+`get_channel` checks the cache; `fetch_channel` is discord.py's official REST
+coroutine. The helper then checks the channel type and its guild through
+`access.check_guild(channel.guild.id)`. It rejects DMs and guilds outside the
+allowlist. This also lets callers fetch an uncached archived thread directly,
+without first calling `list_threads`.
 
-Réutiliser `access.guild`, `access.channel`, `access.message_channel`, `access.message`
-et `access.member` selon la ressource. Pour une méthode discord.py non couverte :
-résoudre et autoriser la ressource avant de l’appeler. Si la méthode retourne une
-autre ressource, vérifier aussi la portée de celle-ci. Une restriction ne doit
-jamais reposer uniquement sur un `guild_id` fourni par l’appelant.
+Reuse `access.guild`, `access.channel`, `access.message_channel`, `access.message`,
+and `access.member` as appropriate. Before calling a discord.py method not covered
+by these helpers, resolve and authorize the resource. If the method returns
+another resource, check its scope as well. Access restrictions must never rely
+solely on a caller-supplied `guild_id`.
 
-Ne pas utiliser `discord.Client()` ou `client.run()` dans l’outil. Ne pas démarrer
-de thread ou de boucle asyncio supplémentaire. Lire la signature dans la
-[référence discord.py de la version stable](https://discordpy.readthedocs.io/en/stable/api.html)
-et utiliser `await` ou `async for` selon le contrat réel de la méthode.
+Do not use `discord.Client()` or `client.run()` inside a tool, or start another
+thread or asyncio event loop. Check the signature in the
+[stable discord.py API reference](https://discordpy.readthedocs.io/en/stable/api.html)
+and use `await` or `async for` according to the method's actual contract.
 
-## 3. Déclarer les paramètres et le résultat MCP
+## 3. Declare MCP parameters and results
 
-Dans `tools/channels.py`, la fonction `register_tools` enregistre explicitement
-les fonctions locales :
+In `tools/channels.py`, `register_tools` explicitly registers local functions:
 
 ```python
 from mcp.server import MCPServer
@@ -78,48 +76,47 @@ def register_tools(mcp: MCPServer, access: DiscordAccess) -> None:
             return await channels.get_channel_info(access, channel_id)
 ```
 
-Cet exemple correspond au code existant : ne pas l’ajouter une seconde fois.
-Le décorateur est exécuté quand le registre appelle `register_tools`, et jamais
-simplement à l’import du module. `access` est une dépendance partagée capturée par
-la fermeture, pas un paramètre exposé au modèle. Les données de l’appel restent
-dans les variables locales.
+This example matches existing code; do not add it a second time. The decorator
+runs when the registry calls `register_tools`, not merely when the module is
+imported. `access` is a shared dependency captured by the closure, not a parameter
+exposed to the model. Request data stays in local variables.
 
-Le SDK **MCP v2** utilisé ici importe `MCPServer` depuis `mcp.server`. Il déduit les
-schémas d’entrée et de sortie des annotations et du modèle Pydantic. Le résultat
-est disponible dans `structuredContent` ; le client Python v2 y accède par
-`result.structured_content`. Ne pas utiliser les chemins FastMCP des exemples v1.
+The **MCP v2** SDK used here imports `MCPServer` from `mcp.server`. It derives input
+and output schemas from type annotations and the Pydantic model. Results are
+available in `structuredContent`; the Python v2 client exposes this as
+`result.structured_content`. Do not use FastMCP import paths from v1 examples.
 
-Pour les nouveaux paramètres :
+For new parameters:
 
-- Réutiliser `Snowflake` : chaîne décimale stricte, non nulle, bornée à 64 bits.
-  Convertir en `int` seulement pour discord.py ; retourner les IDs en `str`.
-- Réutiliser `PageLimit` : entier strict de 1 à 100. Documenter l’ordre, la borne
-  exclusive et le paramètre recevant `next_cursor` ; retourner `null` à la fin.
-- Définir les chaînes et choix avec `Annotated`, `Field`, `Literal` et des bornes.
-  Exemple : `Annotated[str, Field(min_length=1, max_length=100, description="...")]`.
-- Documenter dans la signature/docstring les effets des paramètres optionnels.
-  Pour des activations sensibles, utiliser un booléen strict comme `AllowMentions`.
-- Prévoir un modèle de retour spécifique si les modèles existants ne conviennent
-  pas. Ne pas renvoyer d’objet discord.py, de token ou de données internes du client.
+- Reuse `Snowflake`: a strict, nonzero decimal string within the 64-bit range.
+  Convert to `int` only for discord.py; return IDs as `str`.
+- Reuse `PageLimit`: a strict integer from 1 to 100. Document the order, exclusive
+  boundary, and parameter that accepts `next_cursor`; return `null` at the end.
+- Define strings and choices with `Annotated`, `Field`, `Literal`, and bounds.
+  For example: `Annotated[str, Field(min_length=1, max_length=100, description="...")]`.
+- Document optional parameters and their effects in the signature or docstring.
+  Use strict booleans such as `AllowMentions` for sensitive opt-ins.
+- Add a dedicated result model if existing models do not fit. Do not return
+  discord.py objects, tokens, or internal client data.
 
-Les validations de schéma sont appliquées à la frontière MCP. Les règles métier
-contextuelles, comme l’auteur d’un message ou les permissions, restent dans les
-services et s’appliquent même si le client ment sur ses capacités.
+Schema validation runs at the MCP boundary. Context-dependent business rules,
+such as message ownership or permissions, belong in services and apply even if a
+client misrepresents its capabilities.
 
-## 4. Traduire les erreurs et borner l’opération
+## 4. Translate errors and bound the operation
 
-`async with access.operation()` effectue, dans cet ordre :
+`async with access.operation()` handles:
 
-1. Une attente bornée de disponibilité du runtime partagé.
-2. Une opération asynchrone bornée par `DISCORD_OPERATION_TIMEOUT`.
-3. Une traduction des exceptions Discord et réseau dans `errors.py`.
+1. A bounded wait for the shared runtime to become ready.
+2. An async operation bounded by `DISCORD_OPERATION_TIMEOUT`.
+3. Translation of Discord and network exceptions through `errors.py`.
 
-`discord.Forbidden` devient `ACCESS_DENIED`, `discord.NotFound` devient `NOT_FOUND`,
-un rejet HTTP 400 devient `INVALID_PARAMETER`, les erreurs réseau/HTTP restantes
-deviennent `DISCORD_UNAVAILABLE` et un dépassement de délai devient `TIMEOUT`.
-Les annulations asyncio sont propagées pour permettre un arrêt propre.
+`discord.Forbidden` becomes `ACCESS_DENIED`, `discord.NotFound` becomes `NOT_FOUND`,
+an HTTP 400 rejection becomes `INVALID_PARAMETER`, other network/HTTP failures
+become `DISCORD_UNAVAILABLE`, and a timeout becomes `TIMEOUT`. Asyncio cancellation
+propagates to allow clean shutdown.
 
-Une règle métier explicite se traduit ainsi :
+Raise an explicit business-rule failure like this:
 
 ```python
 from ..errors import DiscordToolError
@@ -127,28 +124,28 @@ from ..errors import DiscordToolError
 raise DiscordToolError("INVALID_PARAMETER", "Resource is not a thread.")
 ```
 
-`DiscordToolError` dérive du `ToolError` officiel v2 : le client MCP reçoit un échec
-avec `isError=true`. Ne jamais écrire `return {"error": "..."}` dans un outil
-déclaré comme réussi. Ne pas recopier les corps HTTP d’erreur, les tokens ou les
-contenus des messages dans les logs. Les erreurs inattendues restent des échecs
-SDK et doivent être corrigées ; ne pas masquer tous les bugs dans un `except Exception`.
+`DiscordToolError` extends the official v2 `ToolError`, so the MCP client receives
+an error with `isError=true`. Never use `return {"error": "..."}` in a result
+reported as successful. Do not copy HTTP error bodies, tokens, or message content
+into logs. Unexpected errors remain SDK failures and should be fixed; do not hide
+all bugs behind `except Exception`.
 
-Choisir une annotation dans `tools/common.py`, ou en créer une adaptée :
+Choose an annotation from `tools/common.py`, or add one that fits:
 
-| Constante | Usage |
+| Constant | Usage |
 | --- | --- |
-| `READ` | Lecture seule, répétable |
-| `WRITE` | Ajout non répétable, par exemple envoi d’un message |
-| `EDIT` | Remplacement/suppression partielle d’un état, par exemple édition ou retrait de réaction |
-| `DELETE` | Suppression, nouvel appel pouvant échouer après le premier |
-| `REACTION_ADD` | Ajout de réaction répétable |
+| `READ` | Read-only, idempotent operation |
+| `WRITE` | Non-idempotent addition, such as sending a message |
+| `EDIT` | Replacement or partial removal of state, such as editing or removing a reaction |
+| `DELETE` | Deletion; another call may fail after the first succeeds |
+| `REACTION_ADD` | Idempotent reaction addition |
 
-Une annotation renseigne le client. Elle n’accorde aucun droit et ne remplace pas
-les contrôles de serveur, d’auteur ou de permission.
+Annotations inform the client. They grant no permissions and do not replace
+guild, ownership, or permission checks.
 
-## 5. Enregistrer le domaine
+## 5. Register the domain
 
-Le module `tools/channels.py` est déjà appelé dans `tools/__init__.py` :
+`tools/channels.py` is already called from `tools/__init__.py`:
 
 ```python
 def register_tools(mcp: MCPServer, access: DiscordAccess) -> None:
@@ -159,23 +156,22 @@ def register_tools(mcp: MCPServer, access: DiscordAccess) -> None:
     members.register_tools(mcp, access)
 ```
 
-L’extrait ci-dessus montre les domaines initiaux. Le registre actuel appelle
-aussi explicitement `polls`, `manage_channels`, `roles`, `moderation`, `permissions`,
-`integrations`, `events`, `search` et `private_messages`. Les modèles de ces
-domaines se trouvent aussi dans `models/management.py` et `models/polls.py`.
+The excerpt above shows the original domains. The current registry also explicitly
+calls `polls`, `manage_channels`, `roles`, `moderation`, `permissions`,
+`integrations`, `events`, `search`, and `private_messages`. Models for these domains
+also live in `models/management.py` and `models/polls.py`.
 
-Un outil ajouté à un domaine existant n’exige aucune modification du registre
-central. Un nouveau domaine doit être importé puis appelé explicitement ici.
-Ne pas ajouter une deuxième instance de serveur MCP.
+Adding a tool to an existing domain does not require changing the central
+registry. A new domain must be imported and explicitly called here. Do not add a
+second MCP server instance.
 
-## 6. Tester sans token et sans réseau
+## 6. Test without a token or network access
 
-Les fixtures de `tests/conftest.py` fournissent `access` et des objets avec les
-spécifications discord.py. Les méthodes asynchrones utilisent `AsyncMock` et les
-itérateurs une vraie fonction asynchrone. Les connexions réseau sont interdites
-automatiquement pendant tous les tests.
+Fixtures in `tests/conftest.py` provide `access` and objects using discord.py specs.
+Async methods use `AsyncMock`, and iterators use real async functions. Network
+connections are automatically blocked during all tests.
 
-Exemple d’un test à ajouter à `tests/test_access.py` ou à un nouveau fichier :
+Example test for `tests/test_access.py` or a new test file:
 
 ```python
 from conftest import make_channel
@@ -197,25 +193,27 @@ async def test_get_channel_info_mcp(access):
     access.client.fetch_channel.assert_awaited_once_with(200)
 ```
 
-Cet exemple utilise le client officiel en mémoire. Le bot n’est pas démarré : la
-fixture fournit une attente de disponibilité doublée. Les tests de cycle de vie
-sont distincts et vérifient le démarrage réel de la tâche avec une connexion doublée.
+This uses the official client in memory. The bot does not start: the fixture mocks
+the readiness wait. Separate lifecycle tests exercise task startup with a mocked
+connection.
 
-Ajouter aussi les cas pertinents : ID invalide, ressource manquante, refus Discord,
-serveur hors liste, cache absent, pagination finale et effets d’écriture. Pour une
-action, vérifier qu’aucune méthode mutante n’a été appelée après un refus. Pour un
-outil à mentions, vérifier les `AllowedMentions`, y compris lors des réponses.
-Les tests existants `test_access.py`, `test_messages.py`, `test_threads.py` et
-`test_mcp.py` donnent des exemples complets.
+Also cover relevant cases: invalid IDs, missing resources, Discord refusals,
+excluded guilds, cache misses, final pagination pages, and write effects. For
+mutations, assert that no mutating method was called after a refusal. For tools
+that support mentions, check `AllowedMentions`, including replies. Existing tests
+in `test_access.py`, `test_messages.py`, `test_threads.py`, and `test_mcp.py` provide
+complete examples.
 
-## 7. Documenter, vérifier et reconstruire
+## 7. Document, verify, and rebuild
 
-Ajouter l’outil au catalogue du README avec ses paramètres, permissions et limites.
-Compléter également `docs/tools.md` et les tests du catalogue. Le fichier épinglé
-`tests/fixtures/reference_tools.json` décrit le dépôt de référence : ne pas le
-modifier pour y ajouter un outil propre au projet. Les tests ajoutent séparément
-les extensions et vérifient que les 81 noms de référence restent couverts.
-Ne pas promettre une recherche exhaustive si l’API ou le cache ne la fournit pas.
+Add the tool to `docs/tools.md` with its parameters, permissions, and limits, and
+extend the catalogue tests. Update the README if the overview or configuration
+changes. See also the [contributing guide](../CONTRIBUTING.md).
+
+The pinned `tests/fixtures/reference_tools.json` describes the reference
+repository: do not modify it to add a project-specific tool. Tests list extensions
+separately and verify that all 81 reference names remain covered. Do not promise
+exhaustive search when the API or cache cannot provide it.
 
 ```bash
 uv run --locked ruff check .
@@ -225,8 +223,8 @@ uv run --locked pytest -q
 docker compose up -d --build
 ```
 
-Le code Python est intégré à l’image ; un simple redémarrage de l’ancienne image
-ne suffit pas. Relancer la découverte des outils dans le client MCP après la
-reconstruction. Si une dépendance change, mettre à jour `pyproject.toml` et `uv.lock`
-ensemble avec uv avant de reconstruire. Une validation réelle en écriture demande
-une instruction explicite et un salon de test ; les tests automatisés restent hors réseau.
+Python code is built into the image; restarting the old image is not enough.
+Refresh tool discovery in the MCP client after rebuilding. If a dependency changes,
+update `pyproject.toml` and `uv.lock` together with uv before rebuilding. Live write
+validation requires explicit authorization and a test channel; automated tests
+remain offline.

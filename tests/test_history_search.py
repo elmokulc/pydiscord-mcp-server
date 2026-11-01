@@ -48,22 +48,22 @@ async def test_search_reports_scan_scope_and_resumes_after_last_scanned(scene):
 
 
 @pytest.mark.parametrize(
-    "query", ["rOsTeR", "ÉQUIPE", "tanks", "alice", "raid-helper", "INSCRIVEZ-VOUS", "bonus"]
+    "query", ["rOsTeR", "CAFÉ", "tanks", "alice", "raid-helper", "SIGN UP", "bonus"]
 )
 async def test_search_finds_embed_only_bot_messages(scene, query):
     samples = [make_message(n, scene.text) for n in [305, 304, 303]]
     for message in samples:
         message.content = ""
-    embed = discord.Embed(title="Roster de guilde", description="Équipe du raid")
+    embed = discord.Embed(title="Guild roster", description="Raid team at the café")
     embed.add_field(name="Tanks", value="Alice")
     embed.set_author(name="Raid-Helper")
-    embed.set_footer(text="Inscrivez-vous ici")
+    embed.set_footer(text="Sign up here")
     samples[1].embeds = [embed, discord.Embed(description="Bonus")]
     scene.text.history.side_effect = lambda **kwargs: async_items(samples[: kwargs["limit"]])
     result = await search.search_messages(scene.access, "200", query, 1, 3, None)
     assert [message.id for message in result.items] == ["304"]
     assert result.items[0].content == ""
-    assert result.items[0].embeds[0].title == "Roster de guilde"
+    assert result.items[0].embeds[0].title == "Guild roster"
     assert result.scanned == 2 and result.next_cursor == "304" and not result.exhausted
 
 

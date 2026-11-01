@@ -1,92 +1,91 @@
-# Sondages natifs Discord
+# Native Discord polls
 
-`create_poll` crée un véritable message contenant un **sondage Discord**, le même
-type d’objet que celui proposé par le bouton **« + » → Sondage** dans l’application.
-Les membres votent dans l’interface Discord habituelle. Le serveur utilise
-`discord.Poll` et `channel.send(poll=...)` ; aucune collection de réactions ne
-simule le vote.
+`create_poll` creates a message containing a **native Discord poll**, the same
+kind of object offered by **“+” → Poll** in the app. Members vote through the
+usual Discord interface. The server uses `discord.Poll` and
+`channel.send(poll=...)`; it does not simulate voting with reactions.
 
-## Créer un sondage
+## Create a poll
 
-Appeler l’outil MCP `create_poll` avec :
+Call the `create_poll` MCP tool with:
 
 ```json
 {
   "channel_id": "123456789012345678",
-  "question": "Quel jour pour la réunion ?",
+  "question": "Which day should we meet?",
   "answers": [
-    {"text": "Lundi", "emoji": "📅"},
-    {"text": "Mardi", "emoji": "📅"},
-    {"text": "Mercredi"}
+    {"text": "Monday", "emoji": "📅"},
+    {"text": "Tuesday", "emoji": "📅"},
+    {"text": "Wednesday"}
   ],
   "duration_hours": 24,
   "allow_multiselect": false
 }
 ```
 
-Remplacer l’ID par celui d’un salon ou d’un fil autorisé qui accepte les messages.
-Un forum lui-même ne reçoit pas directement de sondage : utiliser l’ID du fil
-correspondant à son post. Un emoji personnalisé peut être indiqué sous la forme
-`<:nom:ID>` si le bot y a accès. Les mentions sont désactivées pour la création.
+Replace the ID with an allowed channel or thread that supports messages.
+A forum cannot receive a poll directly: use the thread ID of its post.
+A custom emoji can use the form `<:name:ID>` if the bot can access it.
+Mentions are disabled when creating polls.
 
-Le bot doit posséder **View Channel**, **Send Messages** et **Send Polls** ; pour
-un fil, vérifier également **Send Messages in Threads** et l’accès au fil.
-Pour relire le sondage, accorder **Read Message History**. Message Content intent
-peut être nécessaire pour lire les données de sondages créés par d’autres membres,
-selon les exceptions Discord. Les résultats des sondages du bot sont accessibles
-via REST sans activer une écoute Gateway des votes.
+The bot needs **View Channel**, **Send Messages**, and **Send Polls**. In a thread,
+also check **Send Messages in Threads** and thread access. Grant **Read Message
+History** to read the poll again. Message Content intent may be required to read
+poll data created by other members, subject to Discord's exceptions. Results for
+the bot's own polls are available through REST without listening for Gateway
+vote events.
 
-Limites validées avant tout envoi :
+Limits validated before sending:
 
-| Paramètre | Contrat |
+| Parameter | Contract |
 | --- | --- |
-| `question` | 1–300 caractères, non blanche |
-| `answers` | 2–10 objets, chacun avec `text` et éventuellement `emoji` |
-| `answers[].text` | 1–55 caractères, non blanc |
-| `duration_hours` | Entier de 1 à 768 heures (32 jours), défaut 24 |
-| `allow_multiselect` | Booléen strict, défaut `false` |
+| `question` | 1–300 characters; cannot be whitespace-only |
+| `answers` | 2–10 objects, each with `text` and optional `emoji` |
+| `answers[].text` | 1–55 characters; cannot be whitespace-only |
+| `duration_hours` | Integer from 1 to 768 hours (32 days); default 24 |
+| `allow_multiselect` | Strict boolean; default `false` |
 
-Les durées suivent les possibilités de l’API ; elles ne sont pas limitées aux
-quelques durées prédéfinies affichées par l’interface Discord.
+Durations follow the API's capabilities; they are not restricted to the few
+preset durations shown in Discord's interface.
 
-## Consulter et terminer
+## Read and end a poll
 
-La création retourne un `MessageInfo` avec son `id`, son `channel_id`, son lien
-Discord et un champ `poll`. Conserver ces IDs.
+Creation returns a `MessageInfo` containing its `id`, `channel_id`, Discord link,
+and a `poll` field. Keep these IDs.
 
-| Outil | Paramètres |
+| Tool | Parameters |
 | --- | --- |
-| `get_poll` | `channel_id`, `message_id` ; recharge les votes via REST |
-| `end_poll` | `channel_id`, `message_id` ; clôture anticipée d’un sondage créé par ce bot |
+| `get_poll` | `channel_id`, `message_id`; refreshes votes through REST |
+| `end_poll` | `channel_id`, `message_id`; ends a poll created by this bot early |
 | `get_poll_answer_voters` | `channel_id`, `message_id`, `answer_id`, `limit=25`, `after?` |
 
-`poll` contient `question`, `answers` (ID numérique de réponse, texte, emoji,
-votes), `allow_multiselect`, `expires_at`, `finalized` et `total_votes`. Les mêmes
-données sont incluses dans `read_messages` et `get_message` quand Discord les
-fournit. Les décomptes absents restent `null` et ne sont pas transformés en zéro.
-Les chiffres d’un sondage en cours peuvent être approximatifs ; attendre
-`finalized=true` pour le décompte définitif. Avec les choix multiples, ne pas
-assimiler la somme des votes au nombre de personnes distinctes.
+`poll` contains `question`, `answers` (numeric answer ID, text, emoji, votes),
+`allow_multiselect`, `expires_at`, `finalized`, and `total_votes`. The same data is
+included in `read_messages` and `get_message` when Discord supplies it. Missing
+counts remain `null`, rather than being converted to zero. Counts for an ongoing
+poll may be approximate; wait for `finalized=true` for the final tally. With
+multiple selections enabled, the sum of votes is not the number of distinct
+voters.
 
-Pour les votants d’une réponse, utiliser l’ID renvoyé dans `answers[].id`, pas un
-index supposé. Passer `next_cursor` dans `after` pour continuer la liste des
-utilisateurs. Les IDs des utilisateurs restent des chaînes ; les IDs de réponses
-au sondage sont des petits entiers propres au sondage.
+To list voters for an answer, use the ID returned in `answers[].id`, not an
+assumed index. Pass `next_cursor` as `after` to continue listing users. User IDs
+remain strings; poll answer IDs are small integers local to the poll.
 
-Discord ne permet pas aux applications de voter et n’autorise pas la modification
-du message du sondage après création. Aucun outil de vote ou de modification de
-question/réponses n’est proposé. Pour corriger un sondage, en créer un nouveau et,
-si souhaité, supprimer l’ancien avec `delete_message` selon les contrôles habituels.
-Un sondage d’un autre auteur ne peut pas être terminé par ce bot.
+Discord does not allow applications to vote or the poll message to be edited
+after creation. No tool is provided for voting or editing questions/answers.
+To correct a poll, create a new one and optionally delete the old one with
+`delete_message`, subject to the usual checks. This bot cannot end another
+author's poll.
 
-## Vérification réelle
+## Live validation
 
-Les tests livrés utilisent uniquement des doublures et ne publient aucun sondage.
-Après configuration de votre bot, demander explicitement la publication d’un
-sondage dans un salon de test. Vérifier son rendu natif et voter manuellement dans
-Discord, puis utiliser `get_poll` pour contrôler les résultats. Tester `end_poll`
-uniquement sur un sondage jetable créé par le bot.
+The included tests use doubles only and do not publish polls. After configuring
+your bot, explicitly authorize a poll to be posted in a test channel. Check its
+native appearance and vote manually in Discord, then use `get_poll` to inspect
+the results. Test `end_poll` only on a disposable poll created by the bot.
+See [manual Discord validation](../CONTRIBUTING.md#manual-discord-validation)
+for the general setup.
 
-Références officielles consultées :
+Official references consulted:
 [Discord Poll Resource](https://docs.discord.com/developers/resources/poll),
 [discord.py Poll](https://discordpy.readthedocs.io/en/stable/api.html#discord.Poll).

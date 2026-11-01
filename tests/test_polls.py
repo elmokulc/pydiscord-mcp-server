@@ -17,18 +17,18 @@ async def test_native_poll_payload_and_serialization(scene):
             "create_poll",
             {
                 "channel_id": "200",
-                "question": "On déploie ?",
-                "answers": [{"text": "Oui", "emoji": "👍"}, {"text": "Non"}],
+                "question": "Shall we deploy?",
+                "answers": [{"text": "Yes", "emoji": "👍"}, {"text": "No"}],
                 "duration_hours": 72,
                 "allow_multiselect": True,
             },
         )
     assert not result.is_error
     native = scene.text.send.call_args.kwargs["poll"]
-    assert native.question == "On déploie ?"
+    assert native.question == "Shall we deploy?"
     assert native.duration.total_seconds() == 72 * 3600
     assert native.multiple is True
-    assert [a.text for a in native.answers] == ["Oui", "Non"]
+    assert [a.text for a in native.answers] == ["Yes", "No"]
     assert str(native.answers[0].emoji) == "👍"
     assert scene.text.send.call_args.kwargs["allowed_mentions"].to_dict() == {"parse": []}
     assert result.structured_content["poll"]["answers"][0]["votes"] == 2
@@ -70,7 +70,7 @@ async def test_get_poll_refreshes_rest_instead_of_cache(scene):
     scene.access.client.cached_messages = [scene.poll_message]
     result = await polls.get_poll(scene.access, "200", "310")
     scene.text.fetch_message.assert_awaited_once_with(310)
-    assert result.poll.question == "On déploie ?"
+    assert result.poll.question == "Shall we deploy?"
 
 
 async def test_end_poll_ownership_and_nonpoll_rejection(scene):
