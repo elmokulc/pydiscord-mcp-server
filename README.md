@@ -6,7 +6,8 @@ at `http://localhost:8085/mcp`.
 
 Tools cover messages, search, threads, forums, polls, members, roles, moderation,
 channels, permissions, events, integrations, and optional direct messages.
-See the [tool catalogue](docs/tools.md) for parameters and limits.
+Browse [all available tools](#available-tools), or see the
+[detailed catalogue](docs/tools.md) for parameters and limits.
 
 ## Quick start with Docker
 
@@ -100,6 +101,175 @@ can use the bot's capabilities within the allowed guilds. Keep it local or on a
 controlled private network. Remote access requires an authentication gateway,
 HTTPS, and appropriate Host/Origin restrictions. Browser clients also need CORS
 configured at the proxy or adapter.
+
+## Available tools
+
+All **88 tools** are listed below, grouped by purpose. See the
+[detailed catalogue](docs/tools.md) for required and optional parameters,
+pagination, and limits. Availability in the catalogue does not grant permission
+to run a tool: guild restrictions, Discord permissions, and configured intents
+still apply.
+
+### Guilds
+
+| Tool | Purpose |
+| --- | --- |
+| `list_guilds` | List allowed guilds. |
+| `get_guild_info` | Read guild metadata. |
+| `get_server_info` | Read guild metadata (equivalent to `get_guild_info`). |
+
+### Channels and categories
+
+| Tool | Purpose |
+| --- | --- |
+| `list_channels` | List channels, excluding threads. |
+| `get_channel_info` | Read a channel or thread, including uncached archived threads. |
+| `create_text_channel` | Create a text channel with validated settings. |
+| `edit_text_channel` | Edit the name, topic, NSFW flag, slowmode, category, or position. |
+| `delete_channel` | Permanently delete a channel or thread. |
+| `find_channel` | Find channels whose names match exactly, ignoring case. |
+| `move_channel` | Move a channel to a category in the same guild or change its position. |
+| `create_category` | Create a category. |
+| `edit_category` | Rename or reposition a category. |
+| `delete_category` | Delete a category while keeping its child channels. |
+| `find_category` | Find categories with an exact name match. |
+| `list_channels_in_category` | List a category's child channels. |
+| `create_voice_channel` | Create a voice channel with limits and a region. |
+| `create_stage_channel` | Create a Stage channel. |
+| `edit_voice_channel` | Edit a voice or Stage channel. |
+
+### Messages and search
+
+| Tool | Purpose |
+| --- | --- |
+| `read_messages` | Read a history page with at most one boundary. |
+| `get_message` | Read a message and its reply reference. |
+| `send_message` | Send text, optionally as a reply. |
+| `edit_message` | Edit a message owned by the bot. |
+| `delete_message` | Delete a message; deleting another author's message requires opt-in and Manage Messages. |
+| `add_reaction` | Add a reaction as the bot. |
+| `remove_reaction` | Remove a reaction; removing someone else's requires Manage Messages. |
+| `search_messages` | Search message bodies and embed text in up to 1000 messages from one channel or thread. |
+| `get_message_replies` | Find explicit replies in up to 1000 later messages. |
+
+### Threads and forums
+
+| Tool | Purpose |
+| --- | --- |
+| `list_threads` | List a parent's active or accessible archived threads. |
+| `get_thread_info` | Read thread metadata directly by ID. |
+| `list_active_threads` | List a guild's accessible active threads. |
+| `create_forum_channel` | Create a forum with default settings. |
+| `edit_forum_channel` | Edit a forum or media channel's settings. |
+| `list_forum_channels` | List the guild's forum and media channels. |
+| `get_forum_channel_info` | Read a forum's metadata, tags, and settings. |
+| `list_forum_tags` | List a forum's available tags. |
+| `create_forum_post` | Create a post with its first message and valid tags. |
+| `list_forum_posts` | List active forum posts; use `list_threads` for archives. |
+| `modify_forum_post` | Lock, archive, pin, or replace a post's tags. |
+
+### Polls
+
+| Tool | Purpose |
+| --- | --- |
+| `create_poll` | Create a native Discord poll with a question and answer options. |
+| `get_poll` | Refresh a poll and its counts through REST. |
+| `end_poll` | Close a poll created by this bot. |
+| `get_poll_answer_voters` | List users who selected a poll answer. |
+
+### Members
+
+| Tool | Purpose |
+| --- | --- |
+| `get_member` | Read a member from cache, with a REST fallback. |
+| `get_member_by_id` | Read a member by stable ID (equivalent to `get_member`). |
+| `get_user_id_by_name` | Resolve an exact, unambiguous username within the available search scope. |
+| `search_members` | Look up a specific ID or search names in cache and Gateway candidates. |
+
+### Roles
+
+| Tool | Purpose |
+| --- | --- |
+| `list_roles` | List roles and their permissions. |
+| `create_role` | Create a role with permissions, a color, and other settings. |
+| `edit_role` | Edit a role's properties or position. |
+| `delete_role` | Permanently delete a role. |
+| `assign_role` | Add a role without replacing the member's other roles. |
+| `remove_role` | Remove a role without replacing the member's other roles. |
+
+### Moderation and voice state
+
+| Tool | Purpose |
+| --- | --- |
+| `kick_member` | Remove a member from the guild. |
+| `ban_member` | Ban a user; optionally delete 0–7 days of messages. |
+| `unban_member` | Lift a ban without automatically returning the user to the guild. |
+| `timeout_member` | Restrict communication for 1 second to 28 days. |
+| `remove_timeout` | Lift a temporary communication restriction. |
+| `set_nickname` | Change a nickname; `null` restores the username. |
+| `get_bans` | List banned users and ban reasons. |
+| `move_member` | Move a member to a voice channel in the same guild. |
+| `disconnect_member` | Disconnect a member from their voice channel. |
+| `modify_voice_state` | Apply or remove server mute/deafen. |
+
+### Channel permissions
+
+| Tool | Purpose |
+| --- | --- |
+| `list_channel_permission_overwrites` | List explicit role or member permission overwrites. |
+| `upsert_role_channel_permissions` | Create or update a role overwrite, preserving unrelated permissions. |
+| `upsert_member_channel_permissions` | Create or update a member overwrite, preserving unrelated permissions. |
+| `delete_channel_permission_overwrite` | Delete an entire overwrite to restore inheritance. |
+
+### Webhooks
+
+| Tool | Purpose |
+| --- | --- |
+| `create_webhook` | Create a webhook and return metadata without secrets. |
+| `list_webhooks` | List a channel's webhooks without exposing tokens. |
+| `delete_webhook` | Delete a webhook after checking its guild. |
+| `send_webhook_message` | Send through an authorized webhook, optionally into one of its threads. |
+
+### Invites
+
+| Tool | Purpose |
+| --- | --- |
+| `create_invite` | Create an invite with bounded lifetime and usage limits. |
+| `list_invites` | List guild invites with statistics. |
+| `delete_invite` | Revoke an invite after checking its guild. |
+| `get_invite_details` | Read a public invite while enforcing the guild allowlist. |
+
+### Emojis
+
+| Tool | Purpose |
+| --- | --- |
+| `list_emojis` | List the guild's custom emojis. |
+| `get_emoji_details` | Read a custom emoji from cache, with a REST fallback. |
+| `create_emoji` | Upload an emoji from a base64 image of up to 256 KiB. |
+| `edit_emoji` | Rename an emoji or replace its role restrictions. |
+| `delete_emoji` | Permanently delete a custom emoji. |
+
+### Scheduled events
+
+| Tool | Purpose |
+| --- | --- |
+| `create_guild_scheduled_event` | Create a voice, Stage, or external event with consistent dates and location. |
+| `edit_guild_scheduled_event` | Edit an event's details or status. |
+| `delete_guild_scheduled_event` | Permanently delete an event. |
+| `list_guild_scheduled_events` | List the guild's scheduled and active events. |
+| `get_guild_scheduled_event_users` | List interested users; requires Members intent. |
+
+### Private messages
+
+These tools are always listed, but calls require `DISCORD_ENABLE_DMS=true`,
+an allowed selected guild, and a fresh check of the recipient's membership.
+
+| Tool | Purpose |
+| --- | --- |
+| `send_private_message` | Send a DM after opt-in and a REST membership check for the shared guild. |
+| `read_private_messages` | Read the bot's DM history after opt-in and authorization. |
+| `edit_private_message` | Edit a DM sent by this bot. |
+| `delete_private_message` | Delete a DM sent by this bot. |
 
 ## Tool behavior and limits
 
