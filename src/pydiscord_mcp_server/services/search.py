@@ -6,6 +6,17 @@ from .access import DiscordAccess
 from .serialization import message_info
 
 
+def message_search_text(message: discord.Message) -> str:
+    """Search visible embed text as well as the message body, without REST lookups."""
+    parts = [message.content]
+    for embed in message.embeds:
+        parts.extend([embed.title or "", embed.description or ""])
+        parts.extend([embed.author.name or "", embed.footer.text or ""])
+        for field in embed.fields:
+            parts.extend([field.name or "", field.value or ""])
+    return "\n".join(parts)
+
+
 async def search_messages(
     access: DiscordAccess,
     channel_id: str,
@@ -16,6 +27,7 @@ async def search_messages(
 ) -> HistorySearchResult:
     if not query.strip():
         raise resources.invalid("Search query cannot be blank.")
+    folded_query = query.casefold()
     channel = await access.message_channel(channel_id)
     scanned = 0
     last_id = None
@@ -26,7 +38,7 @@ async def search_messages(
     ):
         scanned += 1
         last_id = str(message.id)
-        if query.casefold() in message.content.casefold():
+        if folded_query in message_search_text(message).casefold():
             items.append(message_info(message))
         if len(items) >= limit:
             exhausted = False

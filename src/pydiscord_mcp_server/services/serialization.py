@@ -3,12 +3,16 @@ import discord
 from ..models import (
     AttachmentInfo,
     ChannelInfo,
+    ComponentInfo,
+    EmbedInfo,
     GuildInfo,
     MemberInfo,
+    MentionInfo,
     MessageInfo,
     PollAnswerInfo,
     PollInfo,
     ReplyReference,
+    StickerInfo,
     UserInfo,
     optional_id,
 )
@@ -145,4 +149,18 @@ def message_info(
         url=message.jump_url,
         poll=poll_info(message.poll) if message.poll is not None else None,
         reply_to=reply,
+        embeds=[EmbedInfo.model_validate(embed.to_dict()) for embed in message.embeds],
+        stickers=[
+            StickerInfo(id=str(s.id), name=s.name, format=s.format.name, url=s.url)
+            for s in message.stickers
+        ],
+        components=[ComponentInfo.model_validate(c.to_dict()) for c in message.components],
+        type=message.type.name,
+        pinned=message.pinned,
+        is_system=message.is_system(),
+        system_content=message.system_content if message.is_system() else None,
+        mentions=[user_info(user) for user in message.mentions],
+        role_mentions=[MentionInfo(id=str(r.id), name=r.name) for r in message.role_mentions],
+        channel_mentions=[MentionInfo(id=str(c.id), name=c.name) for c in message.channel_mentions],
+        mention_everyone=message.mention_everyone,
     )

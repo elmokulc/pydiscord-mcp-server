@@ -1,5 +1,6 @@
 from types import SimpleNamespace
 
+import discord
 import pytest
 from conftest import async_items, make_message
 
@@ -44,6 +45,26 @@ async def test_search_reports_scan_scope_and_resumes_after_last_scanned(scene):
     result = await search.search_messages(scene.access, "200", "missing", 10, 2, None)
     assert result.scanned == 2 and result.items == [] and result.next_cursor == "304"
     assert not result.exhausted
+
+
+@pytest.mark.parametrize(
+    "query", ["rOsTeR", "ÉQUIPE", "tanks", "alice", "raid-helper", "INSCRIVEZ-VOUS", "bonus"]
+)
+async def test_search_finds_embed_only_bot_messages(scene, query):
+    samples = [make_message(n, scene.text) for n in [305, 304, 303]]
+    for message in samples:
+        message.content = ""
+    embed = discord.Embed(title="Roster de guilde", description="Équipe du raid")
+    embed.add_field(name="Tanks", value="Alice")
+    embed.set_author(name="Raid-Helper")
+    embed.set_footer(text="Inscrivez-vous ici")
+    samples[1].embeds = [embed, discord.Embed(description="Bonus")]
+    scene.text.history.side_effect = lambda **kwargs: async_items(samples[: kwargs["limit"]])
+    result = await search.search_messages(scene.access, "200", query, 1, 3, None)
+    assert [message.id for message in result.items] == ["304"]
+    assert result.items[0].content == ""
+    assert result.items[0].embeds[0].title == "Roster de guilde"
+    assert result.scanned == 2 and result.next_cursor == "304" and not result.exhausted
 
 
 async def test_replies_ignore_unrelated_references_and_resume_in_after(scene):

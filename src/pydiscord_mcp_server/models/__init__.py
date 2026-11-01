@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Annotated, Literal
 
-from pydantic import AfterValidator, BaseModel, Field
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field, JsonValue, RootModel
 
 
 def snowflake_range(value: str) -> str:
@@ -101,6 +101,73 @@ class AttachmentInfo(BaseModel):
     description: str | None
 
 
+class EmbedMediaInfo(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    url: str | None = None
+    proxy_url: str | None = None
+    height: int | None = None
+    width: int | None = None
+
+
+class EmbedAuthorInfo(BaseModel):
+    name: str | None = None
+    url: str | None = None
+    icon_url: str | None = None
+    proxy_icon_url: str | None = None
+
+
+class EmbedFooterInfo(BaseModel):
+    text: str | None = None
+    icon_url: str | None = None
+    proxy_icon_url: str | None = None
+
+
+class EmbedFieldInfo(BaseModel):
+    name: str
+    value: str
+    inline: bool = False
+
+
+class EmbedProviderInfo(BaseModel):
+    name: str | None = None
+    url: str | None = None
+
+
+class EmbedInfo(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    type: str | None = None
+    title: str | None = None
+    description: str | None = None
+    url: str | None = None
+    color: int | None = None
+    timestamp: datetime | None = None
+    image: EmbedMediaInfo | None = None
+    thumbnail: EmbedMediaInfo | None = None
+    video: EmbedMediaInfo | None = None
+    provider: EmbedProviderInfo | None = None
+    author: EmbedAuthorInfo | None = None
+    footer: EmbedFooterInfo | None = None
+    fields: list[EmbedFieldInfo] = Field(default_factory=list)
+
+
+class StickerInfo(BaseModel):
+    id: str
+    name: str
+    format: str
+    url: str
+
+
+class ComponentInfo(RootModel[dict[str, JsonValue]]):
+    """Native Discord component payload, preserving nested buttons, selects and layouts."""
+
+
+class MentionInfo(BaseModel):
+    id: str
+    name: str
+
+
 class ReplyReference(BaseModel):
     message_id: str | None
     channel_id: str | None
@@ -136,6 +203,17 @@ class MessageInfo(BaseModel):
     url: str
     poll: PollInfo | None = None
     reply_to: "MessageInfo | None" = None
+    embeds: list[EmbedInfo] = Field(default_factory=list)
+    stickers: list[StickerInfo] = Field(default_factory=list)
+    components: list[ComponentInfo] = Field(default_factory=list)
+    type: str = "default"
+    pinned: bool = False
+    is_system: bool = False
+    system_content: str | None = None
+    mentions: list[UserInfo] = Field(default_factory=list)
+    role_mentions: list[MentionInfo] = Field(default_factory=list)
+    channel_mentions: list[MentionInfo] = Field(default_factory=list)
+    mention_everyone: bool = False
 
 
 class MessagePage(BaseModel):

@@ -19,8 +19,9 @@ def register_tools(mcp: MCPServer, access: DiscordAccess) -> None:
         scan_limit: ScanLimit = 1000,
         before: Snowflake | None = None,
     ) -> HistorySearchResult:
-        """Scan up to 1000 messages of this channel/thread for text, newest first; no global search.
+        """Scan up to 1000 messages for body and embed text, newest first; no global search.
 
+        Embed title, description, fields, author and footer are searched case-insensitively.
         next_cursor resumes in before. Message Content intent controls searchable content.
         """
         async with access.operation():

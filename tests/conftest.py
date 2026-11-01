@@ -81,6 +81,16 @@ def make_message(ident=300, channel=None, author_id=900):
     message.edited_at = None
     message.content = "Bonjour @everyone"
     message.attachments = []
+    message.embeds = []
+    message.stickers = []
+    message.components = []
+    message.type = discord.MessageType.default
+    message.pinned = False
+    message.is_system.return_value = False
+    message.mentions = []
+    message.role_mentions = []
+    message.channel_mentions = []
+    message.mention_everyone = False
     message.reference = None
     message.poll = None
     message.jump_url = f"https://discord.com/channels/100/{message.channel.id}/{ident}"

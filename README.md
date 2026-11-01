@@ -245,7 +245,14 @@ seul salon ou fil**. Les sondages utilisent `create_poll`, `get_poll`, `end_poll
 et `get_poll_answer_voters` ; [exemple complet](docs/polls.md).
 
 Les messages incluent auteur, IDs, dates ISO 8601, contenu, pièces jointes et leurs
-URLs, référence de réponse et lien Discord. Un message cité résolu est inclus sur
+URLs, référence de réponse et lien Discord. Les cartes sont conservées dans
+`embeds` (titre, description, champs, auteur, pied de page, médias et métadonnées),
+sans troncature supplémentaire. Les stickers et composants Discord, y compris les
+composants imbriqués, sont disponibles dans `stickers` et `components`. Le type,
+l’état épinglé, les mentions résolues et le texte des messages système sont aussi
+inclus (`type`, `pinned`, `mentions`, `role_mentions`, `channel_mentions`,
+`mention_everyone`, `is_system`, `system_content`). Un `content` vide peut donc
+contenir un embed ou un autre contenu structuré. Un message cité résolu est inclus sur
 un seul niveau dans `reply_to` ; un message supprimé ou non résolu conserve sa
 référence par ID. Les sondages sont sérialisés dans `poll`. Salons textuels, fils, salons vocaux et
 scènes avec messagerie sont acceptés. Un forum est un parent de fils, pas un salon
@@ -269,7 +276,9 @@ donne les suivants du plus ancien au plus récent. La borne est exclusive.
 bornée sans curseur de continuation. Une page lit au plus `limit + 1` messages pour
 déterminer s’il en reste. `next_cursor=null` termine la pagination.
 
-`search_messages` recherche du texte sans tenir compte de la casse dans au plus
+`search_messages` recherche dans `content` et le texte des embeds (titre,
+description, noms et valeurs des champs, auteur et pied de page), sans tenir
+compte de la casse, dans au plus
 `scan_limit=1000` messages d’un salon/fil, les plus récents d’abord ; reprendre avec
 `before=next_cursor`. `get_message_replies` cherche les références explicites dans
 les messages postérieurs au message cible, les plus anciens d’abord ; reprendre
