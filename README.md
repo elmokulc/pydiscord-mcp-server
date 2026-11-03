@@ -9,6 +9,12 @@ channels, permissions, events, integrations, and optional direct messages.
 Browse [all available tools](#available-tools), or see the
 [detailed catalogue](docs/tools.md) for parameters and limits.
 
+## License
+
+This project is free and open source under the [MIT License](LICENSE). You may
+use, modify, and redistribute it, including commercially, provided you retain
+the copyright and license notices.
+
 ## Quick start with Docker
 
 You need Docker with Compose and a Discord bot invited to your server

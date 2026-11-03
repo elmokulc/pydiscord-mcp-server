@@ -7,6 +7,8 @@ name = "pydiscord-mcp-server"
 version = "0.2.0"
 description = "Persistent MCP server for a Discord bot"
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.12"
 dependencies = [
   "discord.py>=2.7.1,<3",
